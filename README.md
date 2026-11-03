@@ -57,6 +57,10 @@ Customers who churned generally pay a higher monthly charge; the median `Monthly
 
 **Electronic check** users show the highest churn, while automatic payment methods (bank transfer, credit card) have much lower churn counts.
 
+### 4.5 Correlation patterns
+
+The correlation analysis shows that `tenure` (time with the company) moves against churn: long-standing customers are less likely to leave. Higher `MonthlyCharges` and `TotalCharges` trend toward higher churn. On the categorical side, month-to-month contract, electronic-check payment and fiber-optic service are positively associated with churn, while a two-year contract and add-on security/technical-support services are negatively associated with it.
+
 ## 5. Model
 
 A **Random Forest Classifier** was chosen because it handles a mix of categorical and numeric features, captures non-linear relationships, and outputs feature importance that can be interpreted for business decisions.
