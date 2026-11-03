@@ -34,6 +34,19 @@ The practical goal is to point out high-risk customer groups so the company can 
 
 **Why this dataset was chosen:** it combines categorical and numeric features with clear business meaning, it is large enough for a binary-classification task but does not require heavy cleaning, and the churn topic has a direct retention use case. It is also a standard reference dataset, which makes the results easier to compare and interpret.
 
+### 2.1 Obtaining the dataset (not committed to the repository)
+
+The CSV file is kept out of version control to keep the repository small. After downloading `WA_Fn-UseC_-Telco-Customer-Churn.csv` from the Kaggle link in References, the Colab notebook reads it as follows:
+
+```python
+from google.colab import files
+files.upload()  # select the downloaded CSV file
+
+df = pd.read_csv("WA_Fn-UseC_-Telco-Customer-Churn.csv")
+```
+
+Only the code, plots and this report are tracked; the raw data must be downloaded separately and is not pushed to GitHub.
+
 ## 3. Tools and Libraries
 
 - **Language:** Python
