@@ -122,6 +122,8 @@ Classification report on the test set:
 | Macro avg | 0.73 | 0.70 | 0.71 | 1,407 |
 | Weighted avg | 0.78 | 0.79 | 0.78 | 1,407 |
 
+![Classification report](plots/09_classification_report.png)
+
 ### 7.2 Confusion matrix
 
 | Actual \ Predicted | Predicted Stayed | Predicted Churned |
