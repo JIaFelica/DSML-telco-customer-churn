@@ -1,0 +1,7 @@
+# Packages required to run Telco_Churn_Prediction.ipynb
+# These are available by default in Google Colab; install locally if needed.
+pandas
+numpy
+matplotlib
+seaborn
+scikit-learn
