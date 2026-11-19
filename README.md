@@ -43,7 +43,7 @@ Only the code, plots and this report are tracked; the raw data must be downloade
 - **Language:** Python
 - **Data handling:** pandas, NumPy
 - **Visualisation:** Matplotlib, Seaborn
-- **Modelling:** scikit-learn (`RandomForestClassifier`, `train_test_split`, classification metrics, confusion matrix, ROC)
+- **Modelling:** scikit-learn (`RandomForestClassifier` and class-weighted Random Forest, `LogisticRegression` in a `StandardScaler` pipeline, `train_test_split`, classification metrics, confusion matrix, ROC)
 - **Environment:** Google Colab (Jupyter notebook)
 - **Dependencies:** see `requirements.txt` for the packages used to run the notebook.
 
@@ -102,6 +102,8 @@ A **Random Forest Classifier** was chosen for this task:
 - Input: 30 one-hot encoded features
 - Trained on the 80% training split; predictions and evaluation were made on the held-out 20% test split.
 
+The Random Forest is used as the primary baseline model because it provides feature importance for business interpretation; two alternative models are compared against it in section 7.4.
+
 ## 7. Model Evaluation
 ### 7.1 Main metrics
 | Metric | Value |
@@ -137,10 +139,21 @@ Classification report on the test set:
 The most important features are:
 `TotalCharges`, `tenure`, `MonthlyCharges`, `InternetService_Fiber optic`, `PaymentMethod_Electronic check`, and `Contract_Two year`. This matches the EDA findings: shorter tenure, higher charges, fiber service, and electronic-check payment are associated with higher churn risk.
 
+### 7.4 Model comparison
+The default Random Forest was compared with a class-weighted Random Forest and a Logistic Regression model on the same held-out test set:
+
+| Model | Accuracy | ROC-AUC | Churn recall | Churn F1 |
+|---|---|---|---|---|
+| Random Forest | 0.7896 | 0.8165 | 0.5187 | 0.5673 |
+| RF (balanced) | 0.7889 | 0.8177 | 0.4920 | 0.5534 |
+| Logistic Regression | 0.8038 | 0.8357 | 0.5749 | 0.6091 |
+
+**Reading the comparison:** Logistic Regression reaches the highest accuracy, ROC-AUC, churn recall and churn F1. Its churn recall of 0.5749 is about 5.6 percentage points above the default Random Forest (0.5187), so it catches more actual churners. The class-weighted Random Forest did not improve minority-class recall here (0.4920), so class weighting alone did not help on this dataset. All three models stay near 0.79–0.80 accuracy, and the churn class remains difficult to predict.
+
 ## 8. Conclusion and Business Recommendations
 **Answer to research question 1 (which characteristics are most associated with churn):** combining the EDA with the feature-importance plot, the features most associated with higher churn risk are short `tenure`, high `TotalCharges` and `MonthlyCharges`, Fiber optic internet, Electronic check payment, and Month-to-month contracts; two-year contracts, OnlineSecurity and TechSupport are associated with customers staying.
 
-**Answer to research question 2 (can churn be predicted):** a Random Forest predicts churn with test accuracy 0.7896 and ROC-AUC 0.8165, but it misses about half of churners (churn recall 0.52), so it should be used as a risk flag rather than a final decision.
+**Answer to research question 2 (can churn be predicted):** the three models predict churn near 0.79–0.80 accuracy with ROC-AUC 0.82–0.84. Logistic Regression performs best on the churn class (recall 0.5749, F1 0.6091), while the default Random Forest reaches accuracy 0.7896 and ROC-AUC 0.8165 but misses about half of churners (churn recall 0.52). Even the best model still misses a substantial share of churners, so the output should be used as a risk flag rather than a final decision.
 
 - **Longer-contract customers churn less often.** Offer discounts or bundled plans to move month-to-month customers toward one-year / two-year contracts.
 - **Replace electronic check with automatic payment.** Encourage bank-transfer or credit-card auto-pay, possibly with a small incentive.
@@ -150,12 +163,13 @@ The most important features are:
 ## 9. Limitations and Future Work
 - The data are simulated and educational, so conclusions are for academic demonstration rather than direct commercial use.
 - The EDA plots and feature importance show association with churn, not causation; they cannot prove that a feature itself causes a customer to leave.
-- Churn-class recall is moderate (0.52). Future improvements: class weighting or SMOTE to handle imbalance, adjusting the decision threshold, hyper-parameter tuning (e.g. grid search), and comparing Random Forest with Logistic Regression or Gradient Boosting.
+- Churn-class recall is moderate (0.52). A class-weighted Random Forest and a Logistic Regression model were compared against the default Random Forest in the notebook; the remaining future improvements are SMOTE for imbalance, adjusting the decision threshold, hyper-parameter tuning (e.g. grid search), and testing Gradient Boosting.
 
 ## 10. References
-1. Telco Customer Churn dataset, Kaggle, uploaded by BlastChar (simulated IBM data): https://www.kaggle.com/datasets/blastchar/telco-customer-churn (accessed November 2026).
-2. Scikit-learn documentation — `RandomForestClassifier`, `train_test_split`, classification metrics: https://scikit-learn.org/stable/ (accessed November 2026).
-3. pandas documentation: https://pandas.pydata.org/docs/ ; Seaborn documentation: https://seaborn.pydata.org/ (accessed November 2026).
+1. BlastChar (n.d.). *Telco Customer Churn* (simulated IBM data). Kaggle. Available at: https://www.kaggle.com/datasets/blastchar/telco-customer-churn (Accessed: 18 November 2026).
+2. Scikit-learn developers (n.d.). *scikit-learn: Machine Learning in Python* — `RandomForestClassifier`, `train_test_split` and classification metrics. Available at: https://scikit-learn.org/stable/ (Accessed: 18 November 2026).
+3. The pandas development team (n.d.). *pandas documentation*. Available at: https://pandas.pydata.org/docs/ (Accessed: 18 November 2026).
+4. Waskom, M. et al. (n.d.). *Seaborn documentation: statistical data visualization in Python*. Available at: https://seaborn.pydata.org/ (Accessed: 18 November 2026).
 
 ## Reproducibility and Originality
 - `random_state=42` is fixed so the train/test split and model results can be reproduced.
