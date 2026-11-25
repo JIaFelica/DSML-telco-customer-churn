@@ -43,7 +43,8 @@ Only the code, plots and this report are tracked; the raw data must be downloade
 - **Language:** Python
 - **Data handling:** pandas, NumPy
 - **Visualisation:** Matplotlib, Seaborn
-- **Modelling:** scikit-learn (`RandomForestClassifier` and class-weighted Random Forest, `LogisticRegression` in a `StandardScaler` pipeline, `train_test_split`, classification metrics, confusion matrix, ROC)
+- **Modelling:** scikit-learn (`RandomForestClassifier` and class-weighted Random Forest, `GradientBoostingClassifier`, `LogisticRegression` in a `StandardScaler` pipeline, `GridSearchCV`, `train_test_split`, classification metrics, confusion matrix, ROC)
+- **Resampling:** imbalanced-learn `SMOTE` for training-set class balancing
 - **Environment:** Google Colab (Jupyter notebook)
 - **Dependencies:** see `requirements.txt` for the packages used to run the notebook.
 
@@ -102,7 +103,7 @@ A **Random Forest Classifier** was chosen for this task:
 - Input: 30 one-hot encoded features
 - Trained on the 80% training split; predictions and evaluation were made on the held-out 20% test split.
 
-The Random Forest is used as the primary baseline model because it provides feature importance for business interpretation; two alternative models are compared against it in section 7.4.
+The Random Forest is used as the primary baseline model because it provides feature importance for business interpretation; several alternative models, imbalance handling and tuning experiments are compared against it in section 7.4.
 
 ## 7. Model Evaluation
 ### 7.1 Main metrics
@@ -140,20 +141,47 @@ The most important features are:
 `TotalCharges`, `tenure`, `MonthlyCharges`, `InternetService_Fiber optic`, `PaymentMethod_Electronic check`, and `Contract_Two year`. This matches the EDA findings: shorter tenure, higher charges, fiber service, and electronic-check payment are associated with higher churn risk.
 
 ### 7.4 Model comparison
-The default Random Forest was compared with a class-weighted Random Forest and a Logistic Regression model on the same held-out test set:
+The default Random Forest was compared with a class-weighted Random Forest, a Logistic Regression model, a Gradient Boosting model, an SMOTE-balanced Random Forest, and a grid-tuned Random Forest on the same held-out test set:
 
 | Model | Accuracy | ROC-AUC | Churn recall | Churn F1 |
 |---|---|---|---|---|
 | Random Forest | 0.7896 | 0.8165 | 0.5187 | 0.5673 |
 | RF (balanced) | 0.7889 | 0.8177 | 0.4920 | 0.5534 |
 | Logistic Regression | 0.8038 | 0.8357 | 0.5749 | 0.6091 |
+| Gradient Boosting | 0.7953 | 0.8407 | 0.5321 | 0.5802 |
+| RF + SMOTE | 0.7783 | 0.8153 | 0.5909 | 0.5862 |
+| RF (tuned) | 0.7889 | 0.8345 | 0.5027 | 0.5587 |
 
-**Reading the comparison:** Logistic Regression reaches the highest accuracy, ROC-AUC, churn recall and churn F1. Its churn recall of 0.5749 is about 5.6 percentage points above the default Random Forest (0.5187), so it catches more actual churners. The class-weighted Random Forest did not improve minority-class recall here (0.4920), so class weighting alone did not help on this dataset. All three models stay near 0.79–0.80 accuracy, and the churn class remains difficult to predict.
+**Reading the comparison:** Logistic Regression reaches the highest accuracy (0.8038) and churn F1 (0.6091), with an ROC-AUC of 0.8357. Gradient Boosting reaches the highest ROC-AUC (0.8407) and the second-best accuracy (0.7953). The SMOTE-balanced Random Forest catches the most actual churners (churn recall 0.5909), but its accuracy drops to 0.7783. The class-weighted Random Forest did not improve minority-class recall here (0.4920, below the default 0.5187), so class weighting alone did not help on this dataset. All models stay near 0.78–0.80 accuracy, and the churn class remains difficult to predict.
+
+### 7.5 Class imbalance: SMOTE resampling
+Because churn is a minority class (about 26.6%), SMOTE was applied to synthesize new minority-class samples. Resampling was fitted on the **training set only**; the test set was left unchanged to avoid data leakage. The training labels changed from `{stayed: 4,130, churned: 1,495}` to a balanced `{stayed: 4,130, churned: 4,130}`, and a Random Forest was then trained on this balanced training set.
+
+Compared with the default Random Forest, the SMOTE version raises churn recall from 0.5187 to 0.5909 (more churners flagged), but accuracy falls to 0.7783 and ROC-AUC to 0.8153. SMOTE therefore helps catch churners at the cost of more false alarms, which matches the imbalance trade-off.
+
+### 7.6 Decision threshold analysis
+The default classification threshold is 0.50. Using the Logistic Regression probabilities, thresholds from 0.30 to 0.60 were compared to show how the decision boundary changes:
+
+| Threshold | Accuracy | Precision | Recall | F1 |
+|---|---|---|---|---|
+| 0.30 | 0.7434 | 0.5117 | 0.7594 | 0.6114 |
+| 0.40 | 0.7832 | 0.5779 | 0.6845 | 0.6267 |
+| 0.50 | 0.8038 | 0.6476 | 0.5749 | 0.6091 |
+| 0.60 | 0.7903 | 0.6837 | 0.3930 | 0.4992 |
+
+![Threshold vs Precision and Recall](plots/13_threshold_precision_recall.png)
+
+Lowering the threshold flags more customers as churners: recall rises to 0.7594 at 0.30, but precision drops to 0.5117 (more false alarms). Raising the threshold has the opposite effect. The best churn F1 (0.6267) is reached at threshold 0.40, which balances recall and precision. In a retention context, a lower threshold can be chosen when missing a churner is more costly than contacting a loyal customer; a higher threshold suits a limited campaign budget where false contacts should be avoided.
+
+### 7.7 Hyperparameter tuning
+A small grid search (`n_estimators` 100/200, `max_depth` None/10, `min_samples_leaf` 1/2) was run over the Random Forest with 5-fold cross-validation, scored on churn-class F1. The best settings were `max_depth=10`, `min_samples_leaf=1`, `n_estimators=100`, with a best cross-validation F1 of 0.5808.
+
+On the held-out test set this tuned Random Forest reached accuracy 0.7889, ROC-AUC 0.8345, churn recall 0.5027 and churn F1 0.5587. Tuning improved ROC-AUC over the baseline (0.8165 → 0.8345) but did not raise minority-class recall or F1, so the grid search gave limited gains on the churn class for this dataset.
 
 ## 8. Conclusion and Business Recommendations
 **Answer to research question 1 (which characteristics are most associated with churn):** combining the EDA with the feature-importance plot, the features most associated with higher churn risk are short `tenure`, high `TotalCharges` and `MonthlyCharges`, Fiber optic internet, Electronic check payment, and Month-to-month contracts; two-year contracts, OnlineSecurity and TechSupport are associated with customers staying.
 
-**Answer to research question 2 (can churn be predicted):** the three models predict churn near 0.79–0.80 accuracy with ROC-AUC 0.82–0.84. Logistic Regression performs best on the churn class (recall 0.5749, F1 0.6091), while the default Random Forest reaches accuracy 0.7896 and ROC-AUC 0.8165 but misses about half of churners (churn recall 0.52). Even the best model still misses a substantial share of churners, so the output should be used as a risk flag rather than a final decision.
+**Answer to research question 2 (can churn be predicted):** the six models predict churn near 0.78–0.80 accuracy with ROC-AUC 0.82–0.84. Logistic Regression performs best overall (accuracy 0.8038, churn recall 0.5749, churn F1 0.6091), while Gradient Boosting reaches the highest ROC-AUC (0.8407) and the SMOTE-balanced Random Forest flags the most churners (recall 0.5909). The default Random Forest reaches accuracy 0.7896 and ROC-AUC 0.8165 but misses about half of churners (churn recall 0.52). Even the best model still misses a substantial share of churners, so the output should be used as a risk flag rather than a final decision; the decision threshold can be lowered to catch more churners when retention is prioritised.
 
 - **Longer-contract customers churn less often.** Offer discounts or bundled plans to move month-to-month customers toward one-year / two-year contracts.
 - **Replace electronic check with automatic payment.** Encourage bank-transfer or credit-card auto-pay, possibly with a small incentive.
@@ -163,13 +191,14 @@ The default Random Forest was compared with a class-weighted Random Forest and a
 ## 9. Limitations and Future Work
 - The data are simulated and educational, so conclusions are for academic demonstration rather than direct commercial use.
 - The EDA plots and feature importance show association with churn, not causation; they cannot prove that a feature itself causes a customer to leave.
-- Churn-class recall is moderate (0.52). A class-weighted Random Forest and a Logistic Regression model were compared against the default Random Forest in the notebook; the remaining future improvements are SMOTE for imbalance, adjusting the decision threshold, hyper-parameter tuning (e.g. grid search), and testing Gradient Boosting.
+- Churn-class recall remains moderate. The notebook compares a class-weighted Random Forest, Logistic Regression, Gradient Boosting, an SMOTE-balanced Random Forest and a grid-tuned Random Forest, and also examines the decision threshold (sections 7.4–7.7). Further future work could test stronger boosting models (e.g. XGBoost/LightGBM), build customer segments with clustering, choose the threshold from business retention costs rather than F1, and validate the model on real non-simulated data.
 
 ## 10. References
 1. BlastChar (n.d.). *Telco Customer Churn* (simulated IBM data). Kaggle. Available at: https://www.kaggle.com/datasets/blastchar/telco-customer-churn (Accessed: 18 November 2026).
-2. Scikit-learn developers (n.d.). *scikit-learn: Machine Learning in Python* — `RandomForestClassifier`, `train_test_split` and classification metrics. Available at: https://scikit-learn.org/stable/ (Accessed: 18 November 2026).
+2. Scikit-learn developers (n.d.). *scikit-learn: Machine Learning in Python* — `RandomForestClassifier`, `GradientBoostingClassifier`, `LogisticRegression`, `GridSearchCV`, `train_test_split` and classification metrics. Available at: https://scikit-learn.org/stable/ (Accessed: 18 November 2026).
 3. The pandas development team (n.d.). *pandas documentation*. Available at: https://pandas.pydata.org/docs/ (Accessed: 18 November 2026).
 4. Waskom, M. et al. (n.d.). *Seaborn documentation: statistical data visualization in Python*. Available at: https://seaborn.pydata.org/ (Accessed: 18 November 2026).
+5. imbalanced-learn developers (n.d.). *imbalanced-learn: a Python package to tackle imbalanced datasets* — `SMOTE`. Available at: https://imbalanced-learn.org/ (Accessed: 18 November 2026).
 
 ## Reproducibility and Originality
 - `random_state=42` is fixed so the train/test split and model results can be reproduced.

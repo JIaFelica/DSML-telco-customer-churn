@@ -113,4 +113,21 @@
 
 ---
 
+### Week 8 (Mon 23 Nov 2026 – Sun 29 Nov 2026)
+
+**Completed Tasks**
+- Following the supervisor's feedback, added alternative models for comparison: a Logistic Regression scaled pipeline, a class-weighted Random Forest, and a Gradient Boosting classifier, all evaluated on the same test set with Accuracy, ROC-AUC, churn recall and churn F1.
+- Applied SMOTE to balance the training set only; the test set was left unchanged to avoid data leakage, then a Random Forest was trained on the resampled data to test imbalance handling.
+- Ran a decision-threshold analysis on the Logistic Regression probabilities across thresholds 0.30–0.60, and saved the precision/recall threshold plot to the `plots/` folder.
+- Tuned the Random Forest with a small `GridSearchCV` (5-fold cross-validation, scored on churn F1) and recorded the best parameters and the held-out test-set results.
+- Updated the README comparison table, added sections for SMOTE, threshold analysis and tuning, refreshed the conclusions and reference list, and added `imbalanced-learn` to `requirements.txt`.
+
+**Issues and Fixes**
+- The class-weighted Random Forest did not raise minority-class recall on this dataset, and grid tuning improved ROC-AUC but not churn recall. These mixed results were reported honestly in the README rather than presented as a clear improvement.
+
+**Next Step**
+- Upload the updated notebook, README, dependency list and new plot to the repository, then prepare the short presentation.
+
+---
+
 *All work above was completed independently for the continuous assessment. The dataset is public Kaggle data (simulated IBM data); tools and sources are listed in the README references.*
