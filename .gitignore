@@ -222,3 +222,11 @@ __marimo__/
 # Large dataset - not tracked per course requirement
 archive/
 *.csv
+
+# Local notebook backups (do not push to GitHub)
+*.backup.ipynb
+*.pre-enhance.ipynb
+
+# Local draft submission email (process note, not a portfolio deliverable)
+Draft_Portfolio_Email.docx
+
