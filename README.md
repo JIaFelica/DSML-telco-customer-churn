@@ -8,6 +8,7 @@ This project uses a Random Forest classifier to predict telecom customer churn, 
 | `Telco_Churn_Prediction.ipynb` | Full annotated notebook: data loading, cleaning, EDA, model training and evaluation |
 | `README.md` | Written overview of the complete workflow (this file) |
 | `DSML spec .docx` | Approved project specification |
+| `Telco Customer Churn Prediction.pptx` | Slides for the in-class presentation |
 | `worklog.md` | Weekly project work log |
 | `requirements.txt` | Python dependencies for reproducing the notebook |
 | `plots/` | EDA and model output figures |
